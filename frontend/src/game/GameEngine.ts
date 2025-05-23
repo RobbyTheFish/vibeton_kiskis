@@ -2,6 +2,26 @@ import * as PIXI from 'pixi.js'
 import { Player } from './Player'
 import { WebSocketManager } from './WebSocketManager'
 
+// Интерфейсы игры
+export interface Building {
+  id: string;
+  name: string;
+  sprite: string;
+  description?: string;
+}
+
+export interface GameField {
+  id: number;
+  building: Building;
+}
+
+export interface GameState {
+  currentField: number;
+  fields: GameField[];
+  isAnimating: boolean;
+}
+
+// Игровой движок
 export class GameEngine {
   private app: PIXI.Application
   private container: HTMLElement
@@ -9,8 +29,10 @@ export class GameEngine {
   private wsManager: WebSocketManager | null = null
   private gameObjects: Map<string, PIXI.DisplayObject> = new Map()
   private keys: Set<string> = new Set()
+  private state: GameState
+  private stateListeners: ((state: GameState) => void)[] = []
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, buildings: Building[]) {
     this.container = container
     this.app = new PIXI.Application({
       width: 800,
@@ -18,6 +40,14 @@ export class GameEngine {
       backgroundColor: 0x1099bb,
       antialias: true,
     })
+    this.state = {
+      currentField: 0,
+      fields: buildings.map((building, index) => ({
+        id: index,
+        building,
+      })),
+      isAnimating: false,
+    }
   }
 
   async init(): Promise<void> {
@@ -146,5 +176,86 @@ export class GameEngine {
 
     // Destroy PIXI app
     this.app.destroy(true, true)
+  }
+
+  // Подписка на изменения состояния
+  subscribe(listener: (state: GameState) => void) {
+    this.stateListeners.push(listener)
+    return () => {
+      this.stateListeners = this.stateListeners.filter(l => l !== listener)
+    }
+  }
+
+  // Уведомление слушателей об изменении состояния
+  private notifyStateChange() {
+    this.stateListeners.forEach(listener => listener(this.state))
+  }
+
+  // Получить текущее состояние
+  getState(): GameState {
+    return { ...this.state }
+  }
+
+  // Переход к следующему полю
+  nextField(): Promise<void> {
+    if (this.state.isAnimating) return Promise.resolve()
+
+    return new Promise((resolve) => {
+      this.state.isAnimating = true
+      this.notifyStateChange()
+
+      setTimeout(() => {
+        this.state.currentField = (this.state.currentField + 1) % this.state.fields.length
+        this.state.isAnimating = false
+        this.notifyStateChange()
+        resolve()
+      }, 300)
+    })
+  }
+
+  // Переход к предыдущему полю
+  prevField(): Promise<void> {
+    if (this.state.isAnimating) return Promise.resolve()
+
+    return new Promise((resolve) => {
+      this.state.isAnimating = true
+      this.notifyStateChange()
+
+      setTimeout(() => {
+        this.state.currentField = (this.state.currentField - 1 + this.state.fields.length) % this.state.fields.length
+        this.state.isAnimating = false
+        this.notifyStateChange()
+        resolve()
+      }, 300)
+    })
+  }
+
+  // Переход к конкретному полю
+  goToField(fieldIndex: number): Promise<void> {
+    if (this.state.isAnimating || fieldIndex === this.state.currentField) {
+      return Promise.resolve()
+    }
+
+    return new Promise((resolve) => {
+      this.state.isAnimating = true
+      this.notifyStateChange()
+
+      setTimeout(() => {
+        this.state.currentField = fieldIndex
+        this.state.isAnimating = false
+        this.notifyStateChange()
+        resolve()
+      }, 300)
+    })
+  }
+
+  // Получить текущее здание
+  getCurrentBuilding(): Building {
+    return this.state.fields[this.state.currentField].building
+  }
+
+  // Получить общее количество полей
+  getTotalFields(): number {
+    return this.state.fields.length
   }
 } 

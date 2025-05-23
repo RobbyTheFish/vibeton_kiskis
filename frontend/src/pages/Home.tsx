@@ -20,9 +20,14 @@ function Home() {
                 </Link>
               </>
             ) : (
-              <Link to="/create-player" className="btn">
-                Войти в игру
-              </Link>
+              <>
+                <Link to="/game" className="btn btn-secondary" style={{ marginRight: '0.5rem' }}>
+                  Играть без входа
+                </Link>
+                <Link to="/create-player" className="btn">
+                  Войти в игру
+                </Link>
+              </>
             )}
           </nav>
         </div>
@@ -39,7 +44,7 @@ function Home() {
         <div className="container">
           <div className="card" style={{ 
             textAlign: 'center', 
-            maxWidth: '500px', 
+            maxWidth: '600px', 
             margin: '0 auto' 
           }}>
             {user ? (
@@ -56,7 +61,7 @@ function Home() {
                   marginBottom: '2rem', 
                   color: '#666' 
                 }}>
-                  Готовы к игре?
+                  Исследуйте изометрический мир с красивым фоном
                 </p>
                 <Link 
                   to="/game" 
@@ -94,18 +99,45 @@ function Home() {
                   marginBottom: '2rem', 
                   color: '#666' 
                 }}>
-                  Введите имя игрока для начала
+                  Исследуйте красивый изометрический мир
                 </p>
-                <Link 
-                  to="/create-player" 
-                  className="btn" 
-                  style={{ 
-                    fontSize: '1.3rem', 
-                    padding: '16px 32px' 
-                  }}
-                >
-                  Войти в игру
-                </Link>
+                <div style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  marginBottom: '2rem'
+                }}>
+                  <Link 
+                    to="/game" 
+                    className="btn btn-secondary" 
+                    style={{ 
+                      fontSize: '1.2rem', 
+                      padding: '14px 28px' 
+                    }}
+                  >
+                    🎮 Играть сейчас
+                  </Link>
+                  <Link 
+                    to="/create-player" 
+                    className="btn" 
+                    style={{ 
+                      fontSize: '1.2rem', 
+                      padding: '14px 28px' 
+                    }}
+                  >
+                    👤 Создать профиль
+                  </Link>
+                </div>
+                <div style={{
+                  background: '#f8f9fa',
+                  padding: '1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  color: '#666'
+                }}>
+                  💡 Можно играть без регистрации в гостевом режиме или создать профиль для сохранения прогресса
+                </div>
               </div>
             )}
           </div>

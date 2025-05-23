@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { api } from '../services/api'
+import * as api from '../services/api'
 
 interface User {
   id: string
@@ -28,33 +28,48 @@ export const useAuthStore = create<PlayerState>()(
       createPlayer: async (username: string) => {
         try {
           set({ isLoading: true, error: null })
-          const response = await api.post('/players/create-player', { username })
+          console.log('Creating player with username:', username)
           
-          // Get player details
-          const userResponse = await api.get(`/players/player/${username}`)
+          const player = await api.createPlayer(username)
+          console.log('Player created:', player)
+          
+          // Создаем объект пользователя с дополнительными полями
+          const user = {
+            ...player,
+            score: 0,
+            level: 1
+          }
           
           set({
-            user: userResponse.data,
+            user: user,
             isLoading: false,
             error: null
           })
           
         } catch (error: any) {
+          console.error('Error creating player:', error)
           set({
             isLoading: false,
-            error: error.response?.data?.detail || 'Failed to create player'
+            error: error.response?.data?.detail || error.message || 'Failed to create player'
           })
           throw error
         }
       },
 
-      getPlayer: async (username: string) => {
+      getPlayer: async (playerId: string) => {
         try {
           set({ isLoading: true, error: null })
-          const response = await api.get(`/players/player/${username}`)
+          const player = await api.getPlayer(playerId)
+          
+          // Создаем объект пользователя с дополнительными полями
+          const user = {
+            ...player,
+            score: 0,
+            level: 1
+          }
           
           set({
-            user: response.data,
+            user: user,
             isLoading: false,
             error: null
           })
@@ -62,7 +77,7 @@ export const useAuthStore = create<PlayerState>()(
         } catch (error: any) {
           set({
             isLoading: false,
-            error: error.response?.data?.detail || 'Player not found'
+            error: error.response?.data?.detail || error.message || 'Player not found'
           })
           throw error
         }

@@ -1,11 +1,49 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List
 from bson import ObjectId
+from datetime import datetime
 
-from models.game import Player, PlayerUpdate
+from models.game import Player, PlayerUpdate, PlayerCreate
 from database import database
 
 router = APIRouter()
+
+@router.post("/", response_model=dict)
+async def create_player(player_data: PlayerCreate):
+    """Create a new player"""
+    # Check if username already exists
+    existing_player = database.players.find_one({"username": player_data.username})
+    if existing_player:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
+    
+    # Create new player
+    new_player_dict = {
+        "username": player_data.username,
+        "score": 0,
+        "level": 1,
+        "experience": 0,
+        "created_at": datetime.utcnow(),
+        "is_active": True
+    }
+    
+    result = database.players.insert_one(new_player_dict)
+    
+    if result.inserted_id:
+        # Return player data with ID
+        return {
+            "id": str(result.inserted_id),
+            "username": player_data.username,
+            "score": 0,
+            "level": 1
+        }
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create player"
+        )
 
 @router.get("/", response_model=List[dict])
 async def get_players(skip: int = 0, limit: int = 100):
@@ -26,9 +64,13 @@ async def get_player(player_id: str):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Player not found"
             )
-        # Convert ObjectId to string for JSON serialization
-        player_doc["_id"] = str(player_doc["_id"])
-        return player_doc
+        # Convert ObjectId to string and format for frontend
+        return {
+            "id": str(player_doc["_id"]),
+            "username": player_doc["username"],
+            "score": player_doc.get("score", 0),
+            "level": player_doc.get("level", 1)
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

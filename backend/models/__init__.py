@@ -1,1 +1,2 @@
-# Models package 
+# Models package
+from .game import Player, PlayerCreate 

@@ -1,17 +1,9 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import json
-import os
-from typing import List
 
 from database import database
-from models.game import Player, GameState, Position
-from routers import game, players, auth
-from services.game_manager import GameManager
-
-# Game manager instance
-game_manager = GameManager()
+from routers import auth, players
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,9 +32,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router, prefix="/players", tags=["players"])
-app.include_router(players.router, prefix="/players", tags=["players management"])
-app.include_router(game.router, prefix="/game", tags=["game"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(players.router, prefix="/api/players", tags=["players"])
 
 @app.get("/")
 async def root():
@@ -55,19 +46,4 @@ async def health_check():
         await database.ping()
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
-        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
-
-# WebSocket endpoint for real-time game updates
-@app.websocket("/ws/{player_id}")
-async def websocket_endpoint(websocket: WebSocket, player_id: str):
-    await game_manager.connect(player_id, websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            message = json.loads(data)
-            await game_manager.handle_message(player_id, message)
-    except WebSocketDisconnect:
-        await game_manager.disconnect(player_id)
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-        await game_manager.disconnect(player_id) 
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)} 

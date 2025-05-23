@@ -41,6 +41,14 @@ class DatabaseManager:
     @property
     def game_sessions(self) -> Collection:
         return self.get_collection("game_sessions")
+    
+    @property
+    def buildings(self) -> Collection:
+        return self.get_collection("buildings")
+    
+    @property
+    def tasks(self) -> Collection:
+        return self.get_collection("tasks")
 
 # Global database instance
 database = DatabaseManager() 
